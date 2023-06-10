@@ -1,0 +1,28 @@
+modLoader = "javafml"
+loaderVersion = "[40,)"
+#issueTrackerURL = ""
+license = "LGPL"
+
+[[mods]]
+modId = "networkapi"
+version = "${version}"
+displayName = "Network API"
+authors = "Trinsdar"
+description = '''
+Just an abstraction layer for registering and sending packets.
+'''
+#logoFile = ""
+
+[[dependencies.networkapi]]
+modId = "forge"
+mandatory = true
+versionRange = "[40,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.networkapi]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.18.2,)"
+ordering = "NONE"
+side = "BOTH"
