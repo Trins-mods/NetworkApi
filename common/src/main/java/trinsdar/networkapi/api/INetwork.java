@@ -22,6 +22,14 @@ public interface INetwork {
         }
     }
 
+    default void sendToAll(ResourceLocation id, IPacket msg, ServerLevel dimension) {
+        for (ServerPlayer player : getCurrentServer().getPlayerList().getPlayers()) {
+            if (player.getLevel().equals(dimension)) {
+                sendToClient(id, msg, player);
+            }
+        }
+    }
+
     MinecraftServer getCurrentServer();
 
     default void sendToAllAround(ResourceLocation id, IPacket msg, ServerLevel world, AABB alignedBB) {
