@@ -47,20 +47,19 @@ public class NetworkAPIImpl extends NetworkAPI implements ModInitializer {
         ServerLifecycleEvents.SERVER_STARTING.register((server) -> {
             currentServer = server;
         });
-        PacketRegistration.registerPackets();
     }
 
-    public static <MSG extends IPacket> void registerServerToClientPacket(Class<MSG> clazz, Pair<ResourceLocation, Function<FriendlyByteBuf, MSG>> decoder){
+    public static <MSG extends IPacket> void registerServerToClientPacket(Class<MSG> clazz, ResourceLocation packetID, Function<FriendlyByteBuf, MSG> decoder){
         if (FabricLoader.getInstance().getEnvironmentType() != EnvType.CLIENT) return;
-        ClientPlayNetworking.registerGlobalReceiver(decoder.left(), (client, handler, buf, responseSender) -> {
-            IPacket packet = decoder.right().apply(buf);
+        ClientPlayNetworking.registerGlobalReceiver(packetID, (client, handler, buf, responseSender) -> {
+            IPacket packet = decoder.apply(buf);
             client.execute(packet::handleServer);
         });
     }
 
-    public static <MSG extends IPacket> void registerClientToServerPacket(Class<MSG> clazz, Pair<ResourceLocation, Function<FriendlyByteBuf, MSG>> decoder){
-        ServerPlayNetworking.registerGlobalReceiver(decoder.left(), (server, player, handler, buf, responseSender) -> {
-            IPacket packet = decoder.right().apply(buf);
+    public static <MSG extends IPacket> void registerClientToServerPacket(Class<MSG> clazz, ResourceLocation packetID, Function<FriendlyByteBuf, MSG> decoder){
+        ServerPlayNetworking.registerGlobalReceiver(packetID, (server, player, handler, buf, responseSender) -> {
+            IPacket packet = decoder.apply(buf);
             server.execute(() -> packet.handleClient(player));
         });
     }

@@ -19,12 +19,12 @@ public class NetworkAPI {
     }
 
     @ExpectPlatform
-    public static <MSG extends IPacket> void registerServerToClientPacket(Class<MSG> clazz, Pair<ResourceLocation, Function<FriendlyByteBuf, MSG>> decoder){
+    public static <MSG extends IPacket> void registerServerToClientPacket(Class<MSG> clazz, ResourceLocation packetID, Function<FriendlyByteBuf, MSG> decoder){
         throw new AssertionError();
     }
 
     @ExpectPlatform
-    public static <MSG extends IPacket> void registerClientToServerPacket(Class<MSG> clazz, Pair<ResourceLocation, Function<FriendlyByteBuf, MSG>> decoder){
+    public static <MSG extends IPacket> void registerClientToServerPacket(Class<MSG> clazz, ResourceLocation packetID, Function<FriendlyByteBuf, MSG> decoder){
         throw new AssertionError();
     }
 }

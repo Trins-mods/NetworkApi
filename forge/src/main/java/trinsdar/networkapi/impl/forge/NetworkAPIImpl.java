@@ -26,12 +26,7 @@ public class NetworkAPIImpl extends NetworkAPI {
     private static int currMessageId;
     private static final String PROTOCOL_VERSION = Integer.toString(1);
     public NetworkAPIImpl() {
-        handler = NetworkRegistry.ChannelBuilder.
-                named(new ResourceLocation("networkapi", "main_channel")).
-                clientAcceptedVersions(PROTOCOL_VERSION::equals).
-                serverAcceptedVersions(PROTOCOL_VERSION::equals).
-                networkProtocolVersion(() -> PROTOCOL_VERSION).
-                simpleChannel();
+
         NetworkAPI.INSTANCE = new INetwork() {
             @Override
             public void sendToServer(ResourceLocation id, IPacket msg) {
@@ -49,19 +44,31 @@ public class NetworkAPIImpl extends NetworkAPI {
                 return ServerLifecycleHooks.getCurrentServer();
             }
         };
-        PacketRegistration.registerPackets();
     }
 
-    public static <MSG extends IPacket> void registerServerToClientPacket(Class<MSG> clazz, Pair<ResourceLocation, Function<FriendlyByteBuf, MSG>> decoder){
+    private static void initHandler(){
+        if (handler == null){
+            handler = NetworkRegistry.ChannelBuilder.
+                    named(new ResourceLocation("networkapi", "main_channel")).
+                    clientAcceptedVersions(PROTOCOL_VERSION::equals).
+                    serverAcceptedVersions(PROTOCOL_VERSION::equals).
+                    networkProtocolVersion(() -> PROTOCOL_VERSION).
+                    simpleChannel();
+        }
+    }
+
+    public static <MSG extends IPacket> void registerServerToClientPacket(Class<MSG> clazz, ResourceLocation packetID, Function<FriendlyByteBuf, MSG> decoder){
         if (FMLEnvironment.dist.isDedicatedServer()) return;
-        handler.registerMessage(currMessageId++, clazz, IPacket::encode, decoder.right(), (msg, ctx) ->{
+        initHandler();
+        handler.registerMessage(currMessageId++, clazz, IPacket::encode, decoder, (msg, ctx) ->{
             ctx.get().enqueueWork(msg::handleServer);
             ctx.get().setPacketHandled(true);
         }, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     }
 
-    public static  <MSG extends IPacket> void registerClientToServerPacket(Class<MSG> clazz, Pair<ResourceLocation, Function<FriendlyByteBuf, MSG>> decoder){
-        handler.registerMessage(currMessageId++, clazz, IPacket::encode, decoder.right(), (msg, ctx) ->{
+    public static  <MSG extends IPacket> void registerClientToServerPacket(Class<MSG> clazz, ResourceLocation packetID, Function<FriendlyByteBuf, MSG> decoder){
+        initHandler();
+        handler.registerMessage(currMessageId++, clazz, IPacket::encode, decoder, (msg, ctx) ->{
             ctx.get().enqueueWork(() -> msg.handleClient(ctx.get().getSender()));
             ctx.get().setPacketHandled(true);
         }, Optional.of(NetworkDirection.PLAY_TO_SERVER));
