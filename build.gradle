@@ -1,6 +1,14 @@
 plugins {
     id "architectury-plugin" version "3.4-SNAPSHOT"
-    id "dev.architectury.loom" version "1.1-SNAPSHOT" apply false
+    id "dev.architectury.loom" version "0.12.0-SNAPSHOT" apply false
+}
+
+def isCI = System.getenv("GITHUB_ACTION")
+def isRELEASE = System.getenv("GITHUB_RELEASE")
+def gitHash() {
+    String hash = System.getenv("GITHUB_SHA")
+    if (hash != null) return hash.substring(0,8)
+    return ""
 }
 
 architectury {
@@ -20,6 +28,38 @@ subprojects {
         mappings loom.officialMojangMappings()
         // The following line declares the yarn mappings you may select this one as well.
         // mappings "net.fabricmc:yarn:1.18.2+build.4:v2"
+    }
+
+    publishing {
+        publications {
+            mavenJava(org.gradle.api.publish.maven.MavenPublication) {
+                artifactId = "gtrubber-" + project.name
+                artifact(sourcesJar) {
+                    builtBy remapSourcesJar
+                }
+
+                afterEvaluate {
+                    artifact remapJar
+                    if (project.name != "common"){
+                        artifact shadowJar
+                    }
+                }
+            }
+        }
+
+        repositories {
+            if (isCI && isRELEASE) {
+                maven {
+                    url = "https://repo.repsy.io/mvn/trinsdar/trins-mods/"
+                    credentials {
+                        username = System.getenv("MAVEN_USERNAME")
+                        password = System.getenv("MAVEN_PASSWORD")
+                    }
+                }
+            } else {
+                maven { url "file:///${project.projectDir}/mcmodsrepo"}
+            }
+        }
     }
 }
 
