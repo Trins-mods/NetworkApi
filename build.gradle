@@ -2,6 +2,7 @@ plugins {
     id "maven-publish"
     id "architectury-plugin" version "3.4-SNAPSHOT"
     id "dev.architectury.loom" version "0.12.0-SNAPSHOT" apply false
+    id "com.github.johnrengelman.shadow" version "7.1.2" apply false
 }
 
 def isCI = System.getenv("GITHUB_ACTION")
@@ -16,8 +17,71 @@ architectury {
     minecraft = rootProject.minecraft_version
 }
 
+allprojects {
+    apply plugin: "java"
+    apply plugin: "architectury-plugin"
+    apply plugin: "maven-publish"
+
+    archivesBaseName = "${rootProject.archives_base_name}-${project.name}"
+    version = rootProject.mod_version
+    group = rootProject.maven_group
+
+    repositories {
+        // Add repositories to retrieve artifacts from in here.
+        // You should only use this when depending on other mods because
+        // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
+        // See https://docs.gradle.org/current/userguide/declaring_repositories.html
+        // for more information about repositories.
+    }
+
+    tasks.withType(JavaCompile) {
+        options.encoding = "UTF-8"
+        options.release = 17
+    }
+
+    java {
+        withSourcesJar()
+    }
+}
+
 subprojects {
     apply plugin: "dev.architectury.loom"
+    if (!project.path.contains("common")){
+        apply plugin: "com.github.johnrengelman.shadow"
+
+        configurations {
+            common
+            shadowCommon // Don't use shadow from the shadow plugin because we don't want IDEA to index this.
+            compileClasspath.extendsFrom common
+            runtimeClasspath.extendsFrom common
+            if (project.path.contains("forge")){
+                developmentForge.extendsFrom common
+            } else{
+                developmentFabric.extendsFrom common
+            }
+        }
+
+        shadowJar {
+            configurations = [project.configurations.shadowCommon]
+            classifier "dev-shadow"
+        }
+
+        remapJar {
+            input.set shadowJar.archiveFile
+            dependsOn shadowJar
+            classifier null
+        }
+
+        jar {
+            classifier "dev"
+        }
+
+        components.java {
+            withVariantsFromConfiguration(project.configurations.shadowRuntimeElements) {
+                skip()
+            }
+        }
+    }
 
     loom {
         silentMojangMappingsLicense()
@@ -34,7 +98,7 @@ subprojects {
     publishing {
         publications {
             mavenJava(org.gradle.api.publish.maven.MavenPublication) {
-                artifactId = "gtrubber-" + project.name
+                artifactId = "networkapi-" + project.name
                 artifact(sourcesJar) {
                     builtBy remapSourcesJar
                 }
@@ -64,29 +128,4 @@ subprojects {
     }
 }
 
-allprojects {
-    apply plugin: "java"
-    apply plugin: "architectury-plugin"
-    apply plugin: "maven-publish"
 
-    archivesBaseName = "${rootProject.archives_base_name}-${project.name}"
-    version = rootProject.mod_version
-    group = rootProject.maven_group
-
-    repositories {
-        // Add repositories to retrieve artifacts from in here.
-        // You should only use this when depending on other mods because
-        // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-        // See https://docs.gradle.org/current/userguide/declaring_repositories.html
-        // for more information about repositories.
-    }
-
-    tasks.withType(JavaCompile) {
-        options.encoding = "UTF-8"
-        options.release = 17
-    }
-
-    java {
-        withSourcesJar()
-    }
-}
