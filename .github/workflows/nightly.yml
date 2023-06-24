@@ -1,0 +1,60 @@
+name: GT Utility Nightly
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout NetworkAPI
+      uses: actions/checkout@v2
+    - name: Set up JDK 17
+      uses: actions/setup-java@v2
+      with:
+        java-version: '17'
+        distribution: 'adopt'
+        server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
+        settings-path: ${{ github.workspace }} # location for the settings.xml file
+    - name: Setup Gradle Dependencies Cache
+      uses: actions/cache@v2
+      with:
+        path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-caches-${{ hashFiles('**/*.gradle','**/gradle/wrapper/gradle-wrapper.properties','**/*.properties') }}
+    - name: Build with Gradle
+      run: ./gradlew build --stacktrace
+    # The USERNAME and TOKEN need to correspond to the credentials environment variables used in
+    # the publishing section of your build.gradle
+    - name: Upload Forge Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: NetworkAPI-forge-nightly-${{ steps.vars.outputs.sha_short }}
+        path: forge/build/libs
+      env:
+        USERNAME: ${{ github.actor }}
+        TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload Fabric Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: NetworkAPI-fabric-nightly-${{ steps.vars.outputs.sha_short }}
+        path: fabric/build/libs
+      env:
+        USERNAME: ${{ github.actor }}
+        TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Cleanup Gradle Cache
+      # Remove some files from the Gradle cache, so they aren't cached by GitHub Actions.
+      # Restoring these files from a GitHub Actions cache might cause problems for future builds.
+      run: |
+        rm -f ~/.gradle/caches/modules-2/modules-2.lock
+        rm -f ~/.gradle/caches/modules-2/gc.properties
