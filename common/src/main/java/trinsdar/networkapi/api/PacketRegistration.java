@@ -19,6 +19,10 @@ public class PacketRegistration {
         }
     }
 
+    public static <MSG extends IPacket> void registerPacket(Class<MSG> clazz, ResourceLocation packetID, Function<FriendlyByteBuf, MSG> decoder){
+        NetworkAPI.registerBothPacket(clazz, packetID, decoder);
+    }
+
     public enum NetworkDirection{
         PLAY_TO_CLIENT, PLAY_TO_SERVER, LOGIN_TO_CLIENT, LOGIN_TO_SERVER;
     }

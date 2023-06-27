@@ -73,4 +73,18 @@ public class NetworkAPIImpl extends NetworkAPI {
             ctx.get().setPacketHandled(true);
         }, Optional.of(NetworkDirection.PLAY_TO_SERVER));
     }
+
+    public static  <MSG extends IPacket> void registerBothPacket(Class<MSG> clazz, ResourceLocation packetID, Function<FriendlyByteBuf, MSG> decoder){
+        initHandler();
+        handler.registerMessage(currMessageId++, clazz, IPacket::encode, decoder, (msg, ctx) ->{
+            ctx.get().enqueueWork(() -> {
+                if (ctx.get().getDirection() == NetworkDirection.PLAY_TO_SERVER) {
+                    msg.handleClient(ctx.get().getSender());
+                } else if (ctx.get().getDirection() == NetworkDirection.PLAY_TO_CLIENT){
+                    msg.handleServer();
+                }
+            });
+            ctx.get().setPacketHandled(true);
+        });
+    }
 }

@@ -27,4 +27,9 @@ public class NetworkAPI {
     public static <MSG extends IPacket> void registerClientToServerPacket(Class<MSG> clazz, ResourceLocation packetID, Function<FriendlyByteBuf, MSG> decoder){
         throw new AssertionError();
     }
+
+    @ExpectPlatform
+    public static <MSG extends IPacket> void registerBothPacket(Class<MSG> clazz, ResourceLocation packetID, Function<FriendlyByteBuf, MSG> decoder){
+        throw new AssertionError();
+    }
 }

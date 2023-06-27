@@ -63,4 +63,8 @@ public class NetworkAPIImpl extends NetworkAPI implements ModInitializer {
             server.execute(() -> packet.handleClient(player));
         });
     }
+    public static <MSG extends IPacket> void registerBothPacket(Class<MSG> clazz, ResourceLocation packetID, Function<FriendlyByteBuf, MSG> decoder){
+        registerClientToServerPacket(clazz, packetID, decoder);
+        registerServerToClientPacket(clazz, packetID, decoder);
+    }
 }
